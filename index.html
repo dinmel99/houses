@@ -318,6 +318,24 @@
     left:0;
     color:var(--orange);
   }
+  .card-desc-more{
+    display:grid;
+    grid-template-rows:0fr;
+    overflow:hidden;
+    transition:grid-template-rows .25s ease;
+  }
+  .card-desc-more > div{overflow:hidden}
+  .card-desc-more.open{grid-template-rows:1fr}
+  .desc-toggle{
+    background:none;
+    border:none;
+    color:var(--blue);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 0 0;
+  }
+  .desc-toggle:hover{text-decoration:underline}
   .card-contact{
     font-size:12px;
     color:var(--text-muted);
@@ -657,7 +675,7 @@ function renderCard(p, f, isNear){
           <span class="tag">${p.bedrooms} спальни</span>
           <span class="tag">${escapeHtml(p.style)}</span>
         </div>
-        ${p.description ? `<div class="card-desc">${renderDescription(p.description)}</div>` : ''}
+        ${buildDescriptionHtml(p.description, uid)}
         ${p.contact ? `<div class="card-contact">Контакт: ${escapeHtml(p.contact)}</div>` : ''}
       </div>
     </div>
@@ -692,22 +710,46 @@ function escapeHtml(str){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// Превращает текст описания с переносами строк в абзацы,
-// а строки, начинающиеся с "-" или "•", — в маркированный список.
-function renderDescription(text){
+// Рендерит один блок текста (абзац или список через "-"/"•")
+function renderBlock(block){
+  const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+  const isList = lines.every(l => /^[-•]/.test(l));
+
+  if(isList){
+    const items = lines.map(l => `<li>${escapeHtml(l.replace(/^[-•]\s*/, ''))}</li>`).join('');
+    return `<ul class="card-desc-list">${items}</ul>`;
+  }
+  return `<p>${lines.map(escapeHtml).join('<br>')}</p>`;
+}
+
+// Первый блок описания показывается всегда, остальное — под "Показать подробнее"
+function buildDescriptionHtml(text, uid){
   if(!text) return '';
-  const blocks = String(text).split(/\n\s*\n/); // разделяем по пустым строкам
+  const blocks = String(text).split(/\n\s*\n/).filter(b => b.trim());
+  if(blocks.length === 0) return '';
 
-  return blocks.map(block => {
-    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
-    const isList = lines.every(l => /^[-•]/.test(l));
+  const introHtml = renderBlock(blocks[0]);
+  const restBlocks = blocks.slice(1);
 
-    if(isList){
-      const items = lines.map(l => `<li>${escapeHtml(l.replace(/^[-•]\s*/, ''))}</li>`).join('');
-      return `<ul class="card-desc-list">${items}</ul>`;
-    }
-    return `<p>${lines.map(escapeHtml).join('<br>')}</p>`;
-  }).join('');
+  if(restBlocks.length === 0){
+    return `<div class="card-desc">${introHtml}</div>`;
+  }
+
+  const restHtml = restBlocks.map(renderBlock).join('');
+  return `
+    <div class="card-desc">
+      ${introHtml}
+      <div class="card-desc-more" id="more-${uid}"><div>${restHtml}</div></div>
+      <button class="desc-toggle" id="toggle-${uid}" onclick="toggleDescription('${uid}')">Показать подробнее</button>
+    </div>
+  `;
+}
+
+function toggleDescription(uid){
+  const el = document.getElementById('more-' + uid);
+  const btn = document.getElementById('toggle-' + uid);
+  const isOpen = el.classList.toggle('open');
+  btn.textContent = isOpen ? 'Скрыть' : 'Показать подробнее';
 }
 
 function changePhoto(uid, dir){
