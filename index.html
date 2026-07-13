@@ -298,6 +298,26 @@
     color:var(--text-muted);
     margin-top:10px;
   }
+  .card-desc p{margin-bottom:8px}
+  .card-desc p:last-child{margin-bottom:0}
+  .card-desc-list{
+    list-style:none;
+    margin:0 0 8px;
+    padding:0;
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(120px,1fr));
+    gap:4px 12px;
+  }
+  .card-desc-list li{
+    position:relative;
+    padding-left:14px;
+  }
+  .card-desc-list li::before{
+    content:"—";
+    position:absolute;
+    left:0;
+    color:var(--orange);
+  }
   .card-contact{
     font-size:12px;
     color:var(--text-muted);
@@ -637,7 +657,7 @@ function renderCard(p, f, isNear){
           <span class="tag">${p.bedrooms} спальни</span>
           <span class="tag">${escapeHtml(p.style)}</span>
         </div>
-        ${p.description ? `<div class="card-desc">${escapeHtml(p.description)}</div>` : ''}
+        ${p.description ? `<div class="card-desc">${renderDescription(p.description)}</div>` : ''}
         ${p.contact ? `<div class="card-contact">Контакт: ${escapeHtml(p.contact)}</div>` : ''}
       </div>
     </div>
@@ -670,6 +690,24 @@ function escapeHtml(str){
   if(str === undefined || str === null) return '';
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Превращает текст описания с переносами строк в абзацы,
+// а строки, начинающиеся с "-" или "•", — в маркированный список.
+function renderDescription(text){
+  if(!text) return '';
+  const blocks = String(text).split(/\n\s*\n/); // разделяем по пустым строкам
+
+  return blocks.map(block => {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const isList = lines.every(l => /^[-•]/.test(l));
+
+    if(isList){
+      const items = lines.map(l => `<li>${escapeHtml(l.replace(/^[-•]\s*/, ''))}</li>`).join('');
+      return `<ul class="card-desc-list">${items}</ul>`;
+    }
+    return `<p>${lines.map(escapeHtml).join('<br>')}</p>`;
+  }).join('');
 }
 
 function changePhoto(uid, dir){
