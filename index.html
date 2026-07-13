@@ -140,14 +140,59 @@
   .card-photo{
     width:220px;
     min-height:160px;
-    background:var(--surface) center/cover no-repeat;
     flex-shrink:0;
+    background:var(--surface);
+    position:relative;
+    overflow:hidden;
     display:flex;
     align-items:center;
     justify-content:center;
     color:var(--text-muted);
     font-size:12px;
   }
+  .card-photo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .gallery-nav{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:none;
+    background:rgba(0,0,0,0.45);
+    color:#fff;
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .gallery-nav:hover{background:rgba(0,0,0,0.65)}
+  .gallery-nav.prev{left:6px}
+  .gallery-nav.next{right:6px}
+  .gallery-dots{
+    position:absolute;
+    bottom:8px;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    gap:5px;
+  }
+  .gallery-dots .dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.55);
+    cursor:pointer;
+  }
+  .gallery-dots .dot.active{background:#fff}
   .card-body{
     flex:1;
     min-width:220px;
@@ -323,6 +368,8 @@ const FINISH_MAP = {
 
 let ALL_PROJECTS = [];
 let selectedFinish = "";
+let GALLERY_DATA = {}; // uid -> массив URL фото, текущий индекс
+let cardCounter = 0;
 
 async function loadData(){
   const results = document.getElementById('results');
@@ -359,7 +406,15 @@ function fillSelect(id, values){
   });
 }
 
-// Возвращает диапазон цены за м² для проекта с учётом выбранной отделки.
+// Поле "Фото" может содержать несколько путей через запятую — для галереи
+function parsePhotos(photoField){
+  if(!photoField) return [];
+  return String(photoField)
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(p => p.startsWith('http') ? p : IMAGES_PATH + p);
+}
 // Если отделка не выбрана — берём самый дешёвый доступный вариант (тёплый контур),
 // чтобы бюджетный фильтр не отсекал проект зря.
 function getPriceRange(project, finish){
@@ -376,9 +431,10 @@ function getPriceRange(project, finish){
 
 function getTotalRange(project, finish){
   const pr = getPriceRange(project, finish);
+  // цена в таблице указана в тыс. ₽/м² (например 80 = 80 000 ₽/м²)
   return {
-    min: Math.round(pr.min * project.area),
-    max: Math.round(pr.max * project.area)
+    min: Math.round(pr.min * 1000 * project.area),
+    max: Math.round(pr.max * 1000 * project.area)
   };
 }
 
@@ -436,6 +492,8 @@ function distanceScore(p, f){
 }
 
 function applyFilters(){
+  GALLERY_DATA = {};
+  cardCounter = 0;
   const f = getFilters();
   const exact = ALL_PROJECTS.filter(p => matchesHardFilters(p,f) && matchesBudget(p,f));
 
@@ -468,13 +526,31 @@ function applyFilters(){
 
 function renderCard(p, f, isNear){
   const total = getTotalRange(p, f.finish);
-  const photoUrl = p.photo ? (p.photo.startsWith('http') ? p.photo : IMAGES_PATH + p.photo) : '';
-  const photoStyle = photoUrl ? `background-image:url('${photoUrl}')` : '';
+  const photos = parsePhotos(p.photo);
   const finishLabel = f.finish && FINISH_MAP[f.finish] ? FINISH_MAP[f.finish].label : 'от тёплого контура до под ключ';
+
+  const uid = 'g' + (cardCounter++);
+  GALLERY_DATA[uid] = { photos: photos, index: 0 };
+
+  let photoBlock;
+  if(photos.length === 0){
+    photoBlock = 'нет фото';
+  } else if(photos.length === 1){
+    photoBlock = `<img src="${photos[0]}" alt="${escapeHtml(p.name)}">`;
+  } else {
+    photoBlock = `
+      <img id="img-${uid}" src="${photos[0]}" alt="${escapeHtml(p.name)}">
+      <button class="gallery-nav prev" onclick="changePhoto('${uid}', -1)">‹</button>
+      <button class="gallery-nav next" onclick="changePhoto('${uid}', 1)">›</button>
+      <div class="gallery-dots" id="dots-${uid}">
+        ${photos.map((_, i) => `<span class="dot ${i===0?'active':''}" onclick="setPhoto('${uid}', ${i})"></span>`).join('')}
+      </div>
+    `;
+  }
 
   return `
     <div class="card ${isNear ? 'near' : ''}">
-      <div class="card-photo" style="${photoStyle}">${p.photo ? '' : 'нет фото'}</div>
+      <div class="card-photo">${photoBlock}</div>
       <div class="card-body">
         ${isNear ? '<div class="near-label">Не точное совпадение, но близко</div>' : ''}
         <div class="card-top">
@@ -527,6 +603,30 @@ function escapeHtml(str){
   if(str === undefined || str === null) return '';
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function changePhoto(uid, dir){
+  const g = GALLERY_DATA[uid];
+  if(!g || g.photos.length < 2) return;
+  g.index = (g.index + dir + g.photos.length) % g.photos.length;
+  updatePhoto(uid);
+}
+
+function setPhoto(uid, i){
+  const g = GALLERY_DATA[uid];
+  if(!g) return;
+  g.index = i;
+  updatePhoto(uid);
+}
+
+function updatePhoto(uid){
+  const g = GALLERY_DATA[uid];
+  const img = document.getElementById('img-' + uid);
+  if(img) img.src = g.photos[g.index];
+  const dotsWrap = document.getElementById('dots-' + uid);
+  if(dotsWrap){
+    [...dotsWrap.children].forEach((dot, i) => dot.classList.toggle('active', i === g.index));
+  }
 }
 
 // ==== события ====
