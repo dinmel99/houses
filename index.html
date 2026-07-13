@@ -491,14 +491,20 @@ async function loadData(){
 }
 
 function populateFilterOptions(){
-  fillSelect('technology', unique(ALL_PROJECTS.map(p=>p.technology)));
-  fillSelect('style', unique(ALL_PROJECTS.map(p=>p.style)));
+  fillSelect('technology', unique(ALL_PROJECTS.flatMap(p => parseList(p.technology))));
+  fillSelect('style', unique(ALL_PROJECTS.flatMap(p => parseList(p.style))));
   fillSelect('floors', unique(ALL_PROJECTS.map(p=>p.floors)).sort((a,b)=>a-b));
   fillSelect('bedrooms', unique(ALL_PROJECTS.map(p=>p.bedrooms)).sort((a,b)=>a-b));
 }
 
 function unique(arr){
   return [...new Set(arr.filter(v => v !== '' && v !== undefined && v !== null))];
+}
+
+// Поле может содержать несколько значений через запятую (например "Газоблок, Керамический кирпич")
+function parseList(field){
+  if(field === undefined || field === null || field === '') return [];
+  return String(field).split(',').map(s => s.trim()).filter(Boolean);
 }
 
 function fillSelect(id, values){
@@ -558,8 +564,8 @@ function getFilters(){
 }
 
 function matchesHardFilters(p, f){
-  if(f.technology && p.technology !== f.technology) return false;
-  if(f.style && p.style !== f.style) return false;
+  if(f.technology && !parseList(p.technology).includes(f.technology)) return false;
+  if(f.style && !parseList(p.style).includes(f.style)) return false;
   if(f.floors && String(p.floors) !== f.floors) return false;
   if(f.bedrooms && String(p.bedrooms) !== f.bedrooms) return false;
   if(f.areaMin && p.area < f.areaMin) return false;
@@ -586,8 +592,8 @@ function distanceScore(p, f){
     const deviation = Math.abs(mid - targetMid) / (targetMid || 1);
     score += deviation * 100; // вес бюджета
   }
-  if(f.technology && p.technology !== f.technology) score += 60; // вес технологии
-  if(f.style && p.style !== f.style) score += 15;
+  if(f.technology && !parseList(p.technology).includes(f.technology)) score += 60; // вес технологии
+  if(f.style && !parseList(p.style).includes(f.style)) score += 15;
   if(f.floors && String(p.floors) !== f.floors) score += 10;
   if(f.bedrooms && String(p.bedrooms) !== f.bedrooms) score += 10;
   if(f.areaMin && p.area < f.areaMin) score += 8;
