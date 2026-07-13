@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конструктор проектов домов — АН Простор</title>
+<style>
+  :root{
+    --orange:#FF8001;
+    --orange-light:#FFF1E0;
+    --blue:#017AB3;
+    --blue-light:#E6F4FA;
+    --bg:#FFFFFF;
+    --surface:#F7F9FA;
+    --border:#E4E9EC;
+    --text:#1C2B33;
+    --text-muted:#6B7A82;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(1,122,179,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--bg);
+    border-bottom:1px solid var(--border);
+    padding:20px 20px 16px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .header-inner{max-width:1000px;margin:0 auto}
+  .header-title{
+    font-size:20px;
+    font-weight:700;
+    color:var(--text);
+  }
+  .header-sub{
+    font-size:13px;
+    color:var(--text-muted);
+    margin-top:2px;
+  }
+  main{max-width:1000px;margin:0 auto;padding:20px}
+
+  .filters{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:24px;
+  }
+  .filters-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:14px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:5px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:14px;
+    background:#fff;
+    color:var(--text);
+  }
+  .field select:focus, .field input:focus{
+    outline:none;
+    border-color:var(--blue);
+  }
+  .range-row{display:flex;gap:8px;align-items:center}
+  .range-row input{width:100%}
+  .range-row span{color:var(--text-muted);font-size:13px}
+
+  .finish-toggle{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .finish-btn{
+    flex:1;
+    min-width:90px;
+    padding:9px 8px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:#fff;
+    font-size:13px;
+    cursor:pointer;
+    text-align:center;
+    color:var(--text-muted);
+    transition:.15s;
+  }
+  .finish-btn.active{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:#fff;
+    font-weight:600;
+  }
+
+  .reset-btn{
+    margin-top:14px;
+    background:none;
+    border:none;
+    color:var(--blue);
+    font-size:13px;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+
+  .results-count{
+    font-size:13px;
+    color:var(--text-muted);
+    margin-bottom:14px;
+  }
+
+  .cards{display:flex;flex-direction:column;gap:14px}
+
+  .card{
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    background:#fff;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-wrap:wrap;
+  }
+  .card-photo{
+    width:220px;
+    min-height:160px;
+    background:var(--surface) center/cover no-repeat;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--text-muted);
+    font-size:12px;
+  }
+  .card-body{
+    flex:1;
+    min-width:220px;
+    padding:16px 18px;
+  }
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .card-name{font-size:16px;font-weight:700;color:var(--text)}
+  .card-contractor{font-size:13px;color:var(--blue);font-weight:600;margin-top:2px}
+  .card-price{
+    text-align:right;
+    font-size:17px;
+    font-weight:700;
+    color:var(--orange);
+    white-space:nowrap;
+  }
+  .card-price small{
+    display:block;
+    font-size:11px;
+    font-weight:500;
+    color:var(--text-muted);
+  }
+  .card-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+  }
+  .tag{
+    background:var(--blue-light);
+    color:var(--blue);
+    font-size:12px;
+    padding:4px 9px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .card-desc{
+    font-size:13px;
+    color:var(--text-muted);
+    margin-top:10px;
+  }
+  .card-contact{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:8px;
+  }
+
+  .card.near{
+    border-color:var(--orange);
+  }
+  .near-label{
+    display:inline-block;
+    background:var(--orange-light);
+    color:#a35400;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 9px;
+    border-radius:20px;
+    margin-bottom:8px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:40px 20px;
+    background:var(--surface);
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+  }
+  .empty-state p{color:var(--text-muted);font-size:14px;margin-bottom:16px}
+
+  .cta{
+    display:inline-block;
+    background:var(--orange);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    padding:12px 26px;
+    border-radius:10px;
+    text-decoration:none;
+    margin-top:8px;
+  }
+  .cta:hover{background:#e57200}
+
+  .loading, .error{
+    text-align:center;
+    padding:40px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">Конструктор проектов домов</div>
+    <div class="header-sub">АН «Простор» · ИЖС — подбор проекта под клиента в реальном времени</div>
+  </div>
+</header>
+
+<main>
+  <div class="filters">
+    <div class="filters-grid">
+      <div class="field">
+        <label>Бюджет от, млн ₽</label>
+        <input type="number" id="budgetMin" placeholder="0" min="0" step="0.5">
+      </div>
+      <div class="field">
+        <label>Бюджет до, млн ₽</label>
+        <input type="number" id="budgetMax" placeholder="20" min="0" step="0.5">
+      </div>
+      <div class="field">
+        <label>Технология</label>
+        <select id="technology"><option value="">Любая</option></select>
+      </div>
+      <div class="field">
+        <label>Стиль</label>
+        <select id="style"><option value="">Любой</option></select>
+      </div>
+      <div class="field">
+        <label>Этажи</label>
+        <select id="floors"><option value="">Любые</option></select>
+      </div>
+      <div class="field">
+        <label>Спальни</label>
+        <select id="bedrooms"><option value="">Любые</option></select>
+      </div>
+      <div class="field">
+        <label>Площадь от, м²</label>
+        <input type="number" id="areaMin" placeholder="0" min="0" step="5">
+      </div>
+      <div class="field">
+        <label>Площадь до, м²</label>
+        <input type="number" id="areaMax" placeholder="500" min="0" step="5">
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label>Тип отделки</label>
+      <div class="finish-toggle" id="finishToggle">
+        <div class="finish-btn active" data-finish="">Любая</div>
+        <div class="finish-btn" data-finish="warm">Тёплый контур</div>
+        <div class="finish-btn" data-finish="white">Вайтбокс</div>
+        <div class="finish-btn" data-finish="turnkey">Под ключ</div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn">Сбросить фильтры</button>
+  </div>
+
+  <div id="resultsCount" class="results-count"></div>
+  <div id="results"></div>
+</main>
+
+<script>
+// ==== НАСТРОЙКИ ====
+const API_URL = "https://script.google.com/macros/s/AKfycbyT-gRgr9PL1ZKwGN8VpFjhostcvamkavqR0pvhzhUzAVmdRQBbT0ouWoo6Rqd2zTQr/exec";
+const IMAGES_PATH = "images/"; // папка с фото в этом репозитории
+const CURATOR_CONTACT = "https://t.me/din_mel99"; // ссылка на Динислама для индивидуальных проектов
+
+const FINISH_MAP = {
+  warm:    { minKey:'priceWarmMin',    maxKey:'priceWarmMax',    label:'Тёплый контур' },
+  white:   { minKey:'priceWhiteMin',   maxKey:'priceWhiteMax',   label:'Вайтбокс' },
+  turnkey: { minKey:'priceTurnkeyMin', maxKey:'priceTurnkeyMax', label:'Под ключ' }
+};
+
+let ALL_PROJECTS = [];
+let selectedFinish = "";
+
+async function loadData(){
+  const results = document.getElementById('results');
+  results.innerHTML = '<div class="loading">Загружаю проекты…</div>';
+  try{
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    ALL_PROJECTS = data.projects || [];
+    populateFilterOptions();
+    applyFilters();
+  }catch(err){
+    results.innerHTML = '<div class="error">Не удалось загрузить данные. Проверьте, что API_URL указан верно в коде.</div>';
+  }
+}
+
+function populateFilterOptions(){
+  fillSelect('technology', unique(ALL_PROJECTS.map(p=>p.technology)));
+  fillSelect('style', unique(ALL_PROJECTS.map(p=>p.style)));
+  fillSelect('floors', unique(ALL_PROJECTS.map(p=>p.floors)).sort((a,b)=>a-b));
+  fillSelect('bedrooms', unique(ALL_PROJECTS.map(p=>p.bedrooms)).sort((a,b)=>a-b));
+}
+
+function unique(arr){
+  return [...new Set(arr.filter(v => v !== '' && v !== undefined && v !== null))];
+}
+
+function fillSelect(id, values){
+  const sel = document.getElementById(id);
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+// Возвращает диапазон цены за м² для проекта с учётом выбранной отделки.
+// Если отделка не выбрана — берём самый дешёвый доступный вариант (тёплый контур),
+// чтобы бюджетный фильтр не отсекал проект зря.
+function getPriceRange(project, finish){
+  if(finish && FINISH_MAP[finish]){
+    const f = FINISH_MAP[finish];
+    return { min: project[f.minKey], max: project[f.maxKey] };
+  }
+  // без выбора отделки — диапазон от минимума тёплого контура до максимума под ключ
+  return {
+    min: project.priceWarmMin || project.priceWhiteMin || project.priceTurnkeyMin,
+    max: project.priceTurnkeyMax || project.priceWhiteMax || project.priceWarmMax
+  };
+}
+
+function getTotalRange(project, finish){
+  const pr = getPriceRange(project, finish);
+  return {
+    min: Math.round(pr.min * project.area),
+    max: Math.round(pr.max * project.area)
+  };
+}
+
+function getFilters(){
+  return {
+    budgetMin: parseFloat(document.getElementById('budgetMin').value) * 1e6 || null,
+    budgetMax: parseFloat(document.getElementById('budgetMax').value) * 1e6 || null,
+    technology: document.getElementById('technology').value,
+    style: document.getElementById('style').value,
+    floors: document.getElementById('floors').value,
+    bedrooms: document.getElementById('bedrooms').value,
+    areaMin: parseFloat(document.getElementById('areaMin').value) || null,
+    areaMax: parseFloat(document.getElementById('areaMax').value) || null,
+    finish: selectedFinish
+  };
+}
+
+function matchesHardFilters(p, f){
+  if(f.technology && p.technology !== f.technology) return false;
+  if(f.style && p.style !== f.style) return false;
+  if(f.floors && String(p.floors) !== f.floors) return false;
+  if(f.bedrooms && String(p.bedrooms) !== f.bedrooms) return false;
+  if(f.areaMin && p.area < f.areaMin) return false;
+  if(f.areaMax && p.area > f.areaMax) return false;
+  return true;
+}
+
+function matchesBudget(p, f){
+  const total = getTotalRange(p, f.finish);
+  if(f.budgetMin && total.max < f.budgetMin) return false;
+  if(f.budgetMax && total.min > f.budgetMax) return false;
+  return true;
+}
+
+// Оценка "непохожести" для fallback-подбора.
+// Бюджет и технология — самые строгие критерии (наибольший вес).
+function distanceScore(p, f){
+  let score = 0;
+  const total = getTotalRange(p, f.finish);
+
+  if(f.budgetMax || f.budgetMin){
+    const mid = (total.min + total.max)/2;
+    const targetMid = ((f.budgetMin||mid) + (f.budgetMax||mid))/2;
+    const deviation = Math.abs(mid - targetMid) / (targetMid || 1);
+    score += deviation * 100; // вес бюджета
+  }
+  if(f.technology && p.technology !== f.technology) score += 60; // вес технологии
+  if(f.style && p.style !== f.style) score += 15;
+  if(f.floors && String(p.floors) !== f.floors) score += 10;
+  if(f.bedrooms && String(p.bedrooms) !== f.bedrooms) score += 10;
+  if(f.areaMin && p.area < f.areaMin) score += 8;
+  if(f.areaMax && p.area > f.areaMax) score += 8;
+
+  return score;
+}
+
+function applyFilters(){
+  const f = getFilters();
+  const exact = ALL_PROJECTS.filter(p => matchesHardFilters(p,f) && matchesBudget(p,f));
+
+  const resultsEl = document.getElementById('results');
+  const countEl = document.getElementById('resultsCount');
+
+  if(exact.length > 0){
+    countEl.textContent = `Найдено проектов: ${exact.length}`;
+    resultsEl.innerHTML = exact.map(p => renderCard(p, f, false)).join('');
+    return;
+  }
+
+  // fallback: ближайшие варианты
+  if(ALL_PROJECTS.length === 0){
+    countEl.textContent = '';
+    resultsEl.innerHTML = renderEmptyState();
+    return;
+  }
+
+  const ranked = [...ALL_PROJECTS]
+    .map(p => ({ p, score: distanceScore(p, f) }))
+    .sort((a,b) => a.score - b.score)
+    .slice(0, 2);
+
+  countEl.textContent = 'Точных совпадений не найдено — вот ближайшие варианты';
+  resultsEl.innerHTML =
+    ranked.map(r => renderCard(r.p, f, true)).join('') +
+    renderCTA();
+}
+
+function renderCard(p, f, isNear){
+  const total = getTotalRange(p, f.finish);
+  const photoUrl = p.photo ? (p.photo.startsWith('http') ? p.photo : IMAGES_PATH + p.photo) : '';
+  const photoStyle = photoUrl ? `background-image:url('${photoUrl}')` : '';
+  const finishLabel = f.finish && FINISH_MAP[f.finish] ? FINISH_MAP[f.finish].label : 'от тёплого контура до под ключ';
+
+  return `
+    <div class="card ${isNear ? 'near' : ''}">
+      <div class="card-photo" style="${photoStyle}">${p.photo ? '' : 'нет фото'}</div>
+      <div class="card-body">
+        ${isNear ? '<div class="near-label">Не точное совпадение, но близко</div>' : ''}
+        <div class="card-top">
+          <div>
+            <div class="card-name">${escapeHtml(p.name)}</div>
+            <div class="card-contractor">${escapeHtml(p.contractor)}</div>
+          </div>
+          <div class="card-price">
+            ${formatMillions(total.min)}–${formatMillions(total.max)} млн ₽
+            <small>${finishLabel}</small>
+          </div>
+        </div>
+        <div class="card-tags">
+          <span class="tag">${escapeHtml(p.technology)}</span>
+          <span class="tag">${p.area} м²</span>
+          <span class="tag">${p.floors} эт.</span>
+          <span class="tag">${p.bedrooms} спальни</span>
+          <span class="tag">${escapeHtml(p.style)}</span>
+        </div>
+        ${p.description ? `<div class="card-desc">${escapeHtml(p.description)}</div>` : ''}
+        ${p.contact ? `<div class="card-contact">Контакт: ${escapeHtml(p.contact)}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderCTA(){
+  return `
+    <div class="empty-state" style="margin-top:14px">
+      <p>Подходящего готового проекта нет — но это не значит, что дом невозможен.<br>Большинство наших подрядчиков строят и по индивидуальным проектам.</p>
+      <a class="cta" href="${CURATOR_CONTACT}" target="_blank">Обсудить индивидуальный проект</a>
+    </div>
+  `;
+}
+
+function renderEmptyState(){
+  return `
+    <div class="empty-state">
+      <p>База проектов пока пуста.</p>
+      <a class="cta" href="${CURATOR_CONTACT}" target="_blank">Обсудить индивидуальный проект</a>
+    </div>
+  `;
+}
+
+function formatMillions(v){
+  return (v/1e6).toFixed(1).replace('.', ',');
+}
+
+function escapeHtml(str){
+  if(str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ==== события ====
+document.querySelectorAll('.finish-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.finish-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFinish = btn.dataset.finish;
+    applyFilters();
+  });
+});
+
+['budgetMin','budgetMax','technology','style','floors','bedrooms','areaMin','areaMax'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', applyFilters);
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  ['budgetMin','budgetMax','areaMin','areaMax'].forEach(id => document.getElementById(id).value = '');
+  ['technology','style','floors','bedrooms'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('.finish-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.finish-btn[data-finish=""]').classList.add('active');
+  selectedFinish = '';
+  applyFilters();
+});
+
+loadData();
+</script>
+</body>
+</html>
