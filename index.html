@@ -341,6 +341,20 @@
     color:var(--text-muted);
     margin-top:8px;
   }
+  .pick-project-btn{
+    margin-top:12px;
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:var(--surface);
+    color:var(--text);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .pick-project-btn:hover{border-color:var(--orange);color:var(--orange)}
+  .pick-project-btn.picked{background:#1E8A54;border-color:#1E8A54;color:#fff}
 
   .card.near{
     border-color:var(--orange);
@@ -475,6 +489,39 @@ let ALL_PROJECTS = [];
 let selectedFinish = "";
 let GALLERY_DATA = {}; // uid -> массив URL фото, текущий индекс
 let cardCounter = 0;
+let CARD_PROJECTS = {}; // uid -> объект проекта, для кнопки "Выбрать проект"
+
+// ==== СЕССИЯ КЛИЕНТА (общая для инструментов dinmel99.github.io) ====
+const SESSION_KEY = 'izhs_session';
+
+function loadSession(){
+  try{ return JSON.parse(localStorage.getItem(SESSION_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+
+function saveSession(patch){
+  const merged = Object.assign(loadSession(), patch, {updatedAt: Date.now()});
+  localStorage.setItem(SESSION_KEY, JSON.stringify(merged));
+  try{
+    window.parent.postMessage({type:'izhs_session_update', session: merged}, '*');
+  }catch(e){ /* нет родителя — ничего страшного */ }
+}
+
+function selectHouseProject(uid){
+  const p = CARD_PROJECTS[uid];
+  if(!p) return;
+  saveSession({
+    selectedHouseProject: {
+      name: p.name,
+      contractor: p.contractor || '',
+      technology: p.technology || '',
+      area: p.area || '',
+      style: p.style || ''
+    }
+  });
+  const btn = document.getElementById('pick-' + uid);
+  if(btn){ btn.textContent = '✓ Выбрано'; btn.classList.add('picked'); }
+}
 
 async function loadData(){
   const results = document.getElementById('results');
@@ -642,6 +689,7 @@ function renderCard(p, f, isNear){
 
   const uid = 'g' + (cardCounter++);
   GALLERY_DATA[uid] = { photos: photos, index: 0 };
+  CARD_PROJECTS[uid] = p;
 
   let photoBlock;
   if(photos.length === 0){
@@ -683,6 +731,7 @@ function renderCard(p, f, isNear){
         </div>
         ${buildDescriptionHtml(p.description, uid)}
         ${p.contact ? `<div class="card-contact">Контакт: ${escapeHtml(p.contact)}</div>` : ''}
+        <button type="button" id="pick-${uid}" class="pick-project-btn" onclick="selectHouseProject('${uid}')">✓ Выбрать проект</button>
       </div>
     </div>
   `;
