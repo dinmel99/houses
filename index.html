@@ -521,12 +521,15 @@ function toggleInSessionArray(key, item, matchField){
 function selectHouseProject(uid){
   const p = CARD_PROJECTS[uid];
   if(!p) return;
+  const photos = parsePhotos(p.photo);
   const added = toggleInSessionArray('selectedHouseProjects', {
     name: p.name,
     contractor: p.contractor || '',
     technology: p.technology || '',
     area: p.area || '',
-    style: p.style || ''
+    style: p.style || '',
+    photo: photos[0] || '',
+    description: p.description || ''
   }, 'name');
   const btn = document.getElementById('pick-' + uid);
   if(btn){
