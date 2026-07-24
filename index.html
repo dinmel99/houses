@@ -507,20 +507,46 @@ function saveSession(patch){
   }catch(e){ /* нет родителя — ничего страшного */ }
 }
 
+function toggleInSessionArray(key, item, matchField){
+  const s = loadSession();
+  const list = Array.isArray(s[key]) ? s[key].slice() : [];
+  const idx = list.findIndex(x => x[matchField] === item[matchField]);
+  let added;
+  if(idx >= 0){ list.splice(idx,1); added = false; }
+  else{ list.push(item); added = true; }
+  saveSession({[key]: list});
+  return added;
+}
+
 function selectHouseProject(uid){
   const p = CARD_PROJECTS[uid];
   if(!p) return;
-  saveSession({
-    selectedHouseProject: {
-      name: p.name,
-      contractor: p.contractor || '',
-      technology: p.technology || '',
-      area: p.area || '',
-      style: p.style || ''
-    }
-  });
+  const added = toggleInSessionArray('selectedHouseProjects', {
+    name: p.name,
+    contractor: p.contractor || '',
+    technology: p.technology || '',
+    area: p.area || '',
+    style: p.style || ''
+  }, 'name');
   const btn = document.getElementById('pick-' + uid);
-  if(btn){ btn.textContent = '✓ Выбрано'; btn.classList.add('picked'); }
+  if(btn){
+    btn.textContent = added ? '✓ Выбрано' : '✓ Выбрать проект';
+    btn.classList.toggle('picked', added);
+  }
+}
+
+// Восстанавливает "✓ Выбрано" на карточках, чьи проекты уже есть в сессии —
+// вызывать после каждого рендера результатов (фильтр/поиск перерисовывает карточки).
+function refreshProjectPickButtons(){
+  const s = loadSession();
+  const names = new Set((s.selectedHouseProjects||[]).map(x=>x.name));
+  Object.keys(CARD_PROJECTS).forEach(uid=>{
+    const btn = document.getElementById('pick-' + uid);
+    if(!btn) return;
+    const on = names.has(CARD_PROJECTS[uid].name);
+    btn.textContent = on ? '✓ Выбрано' : '✓ Выбрать проект';
+    btn.classList.toggle('picked', on);
+  });
 }
 
 async function loadData(){
@@ -651,6 +677,7 @@ function distanceScore(p, f){
 
 function applyFilters(){
   GALLERY_DATA = {};
+  CARD_PROJECTS = {};
   cardCounter = 0;
   const f = getFilters();
   const exact = ALL_PROJECTS.filter(p => matchesHardFilters(p,f) && matchesBudget(p,f));
@@ -661,6 +688,7 @@ function applyFilters(){
   if(exact.length > 0){
     countEl.textContent = `Найдено проектов: ${exact.length}`;
     resultsEl.innerHTML = exact.map(p => renderCard(p, f, false)).join('');
+    refreshProjectPickButtons();
     return;
   }
 
@@ -680,6 +708,7 @@ function applyFilters(){
   resultsEl.innerHTML =
     ranked.map(r => renderCard(r.p, f, true)).join('') +
     renderCTA();
+  refreshProjectPickButtons();
 }
 
 function renderCard(p, f, isNear){
